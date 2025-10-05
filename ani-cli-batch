@@ -15,6 +15,21 @@ get_latest_episode() {
     tail -n 1 || echo 0
 }
 
+check_incomplete() {
+  local dir="$1"
+  local ep="$2"
+
+  [ -d "$dir" ] || return 0
+
+  # Match "Episode <ep>.<ext>.<ext2>"
+  if find "$dir" -maxdepth 1 -type f -printf "%f\n" |
+    grep -Ei "Episode[[:space:]]*${ep}\.[^.]+\.[^.]+$" >/dev/null 2>&1; then
+    return 0
+  fi
+
+  return 1
+}
+
 main() {
   anime_dir="$1"
   shopt -s nullglob
@@ -25,7 +40,13 @@ main() {
       cd "$dir" || exit
 
       ep=$(get_latest_episode "$dir")
-      next=$((ep + 1))
+
+      if check_incomplete "$dir" "$ep"; then
+        echo "Incomplete episode $ep"
+        next="$ep"
+      else
+        next=$((ep + 1))
+      fi
 
       echo "Attempt download episodes from: Episode $next"
 
