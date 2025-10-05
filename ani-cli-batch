@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  echo "Usage: $0 <directory>"
+  echo "<directory>: Directory containing sub-directories named after anime titles."
+}
+
+get_latest_episode() {
+  local dir="$1"
+
+  find "$dir" -maxdepth 1 -type f -printf "%f\n" |
+    grep -oP 'Episode\s+\K\d+(?=\.[^.]+$)' |
+    sort -V |
+    tail -n 1 || echo 0
+}
+
+main() {
+  anime_dir="$1"
+  shopt -s nullglob
+  for dir in "$anime_dir"/*/; do
+    (
+      name=$(basename "$dir")
+      echo "Checking anime: $name"
+      cd "$dir" || exit
+
+      ep=$(get_latest_episode "$dir")
+      next=$((ep + 1))
+
+      echo "Attempt download episodes from: Episode $next"
+
+      /usr/bin/ani-cli --download --range "${next}-100" "$name" || true
+    )
+
+  done
+}
+
+if [ -z "$1" ]; then
+  usage
+  exit 1
+else
+  main "$1"
+fi
