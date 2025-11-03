@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+IGNORED_FILE_NAME=".ignored"
+
 usage() {
   echo "Usage: $0 <directory>"
   echo "<directory>: Directory containing sub-directories named after anime titles."
@@ -38,6 +40,11 @@ main() {
       name=$(basename "$dir")
       echo "Checking anime: $name"
       cd "$dir" || exit
+
+      if [ -f "$dir/$IGNORED_FILE_NAME" ]; then
+        echo "Found completed file: $dir/$IGNORED_FILE_NAME"
+        exit 0
+      fi
 
       ep=$(get_latest_episode "$dir")
 
